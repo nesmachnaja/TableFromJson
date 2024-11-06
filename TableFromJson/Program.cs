@@ -100,10 +100,12 @@ namespace TableFromJson
                     //JsonElement child;
                     //if (propertyType == "array") child = property.Value[0];
 
-                    if ((!toExclude.Contains(propertyType) 
-                        || propertyType == "array" && GetJsonElementType(property.Value[0]) != "object") 
+                    if (!toExclude.Contains(propertyType) 
+                        //|| propertyType == "array" && GetJsonElementType(property.Value[0]) != "object") 
                         && !result.Contains($"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null"))
                         result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null,\n");
+                    else if (propertyType == "array" && GetJsonElementType(property.Value[0]) != "object")
+                        result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {GetJsonElementType(property.Value[0])} null,\n");
                     else if (propertyType == "array")
                     {
                         Console.WriteLine($"Выполнить парсинг вложенного узла {propertyName}? Введите Y для подтверждения, N - для отказа");
