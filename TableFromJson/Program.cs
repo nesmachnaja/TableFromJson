@@ -11,7 +11,16 @@ namespace TableFromJson
     {
         static void Main(string[] args)
         {
-            string filePath = @"\\ocs.ru\adm\UFR$\lnesmachnaya\Downloads\response_1730817393219.json";
+            Console.WriteLine(" /\\_/\\ \n( o.o )\n > ^ <");
+            string filePath = string.Empty;
+
+            while (filePath == string.Empty || !File.Exists(filePath))
+            {
+                filePath = GetDirectory();
+                if (!File.Exists(filePath)) Console.WriteLine("Указанного файла не существует");
+            }
+
+            //string filePath = @"\\ocs.ru\adm\UFR$\lnesmachnaya\Downloads\response_1730817393219.json";
 
             try
             {
@@ -23,7 +32,7 @@ namespace TableFromJson
 
                 //var jsonData = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonContent);
 
-                //Regex regex = new Regex(@"^[\t\s]*""\w+[^"",\s]", RegexOptions.Multiline);
+                //Regex regex = new Regex(@"^[\t\s]*""\w+[^"",\s]", RegexOptions.Multiline);Ошибка при чтении файла: Specified argument was out of the range of valid values. (Parameter 'startIndex')
                 ////Regex regex = new Regex(@"(?<=^|\{|\}|\n)\s*""(\w+)""\s*:", RegexOptions.Multiline);
                 //MatchCollection matches = regex.Matches(jsonContent);
 
@@ -45,23 +54,64 @@ namespace TableFromJson
             {
                 Console.WriteLine("Ошибка при чтении файла: " + ex.Message);
             }
+
+            Console.WriteLine();
+            Console.WriteLine(" /\\_/\\ \n( -.- )\n > ^ <\n");
+            Console.WriteLine("Нажмите любую клавишу для выхода");
+            Console.ReadKey();
+        }
+
+        private static string GetDirectory()
+        {
+            Console.WriteLine("Введите путь к файлу для парсинга:");
+            string filePath = Console.ReadLine();
+            Console.WriteLine();
+            return filePath;
         }
 
         static void PrintJsonObject(JsonElement element)
         {
             if (element[0].ValueKind == JsonValueKind.Object)
             {
-                string[] toExclude = { "array", "object" };
-                Console.WriteLine("create table (");
+                string result = $"create table ( \n";
+
+                //Console.WriteLine("create table (");
+                string body;
+                CreateQueryBody(element, "", out body);
+                result = result.Insert(result.Length, body);
+                result = result.Insert(result.Length, ")");
+
+                Console.WriteLine(result);
+            }
+        }
+
+        private static void CreateQueryBody(JsonElement element, string currentLevel, out string result)
+        {
+            string[] toExclude = { "array", "object" };
+            result = currentLevel;
+
+            if (element.GetArrayLength() > 0)
+            {
                 foreach (var property in element[0].EnumerateObject())
                 {
                     string propertyName = property.Name;
                     string propertyType = GetJsonElementType(property.Value);
 
-                    if (!toExclude.Contains(propertyType))
-                        Console.WriteLine($"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null,");
+                    //JsonElement child;
+                    //if (propertyType == "array") child = property.Value[0];
+
+                    if ((!toExclude.Contains(propertyType) 
+                        || propertyType == "array" && GetJsonElementType(property.Value[0]) != "object") 
+                        && !result.Contains($"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null"))
+                        result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null,\n");
+                    else if (propertyType == "array")
+                    {
+                        Console.WriteLine($"Выполнить парсинг вложенного узла {propertyName}? Введите Y для подтверждения, N - для отказа");
+                        string reply = Console.ReadLine();
+                        if (reply.ToUpper() == "Y")
+                            CreateQueryBody(property.Value, result, out result);
+                    }
                 }
-                Console.WriteLine(")");
             }
         }
 
