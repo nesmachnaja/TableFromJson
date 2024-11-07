@@ -104,7 +104,7 @@ namespace TableFromJson
                         //|| propertyType == "array" && GetJsonElementType(property.Value[0]) != "object") 
                         && !result.Contains($"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null"))
                         result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null,\n");
-                    else if (propertyType == "array" && GetJsonElementType(property.Value[0]) != "object")
+                    else if (propertyType == "array" && property.Value.GetArrayLength() > 0 && GetJsonElementType(property.Value[0]) != "object")
                         result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {GetJsonElementType(property.Value[0])} null,\n");
                     else if (propertyType == "array")
                     {
