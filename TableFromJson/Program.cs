@@ -71,7 +71,7 @@ namespace TableFromJson
 
         static void PrintJsonObject(JsonElement element)
         {
-            if (element[0].ValueKind == JsonValueKind.Object)
+            if (element.ValueKind == JsonValueKind.Object || element[0].ValueKind == JsonValueKind.Object)
             {
                 string result = $"create table ( \n";
 
@@ -89,29 +89,33 @@ namespace TableFromJson
         {
             string[] toExclude = { "array", "object" };
             result = currentLevel;
+            JsonElement currentElement;
 
-            if (element.GetArrayLength() > 0)
+            if (GetJsonElementType(element) == "array" && element.GetArrayLength() > 0)
+                currentElement = element[0];
+            else currentElement = element;
+
+            foreach (var property in currentElement.EnumerateObject())
             {
-                foreach (var property in element[0].EnumerateObject())
+                string propertyName = property.Name;
+                string propertyType = GetJsonElementType(property.Value);
+
+                //JsonElement child;
+                //if (propertyType == "array") child = property.Value[0];
+
+                if (!toExclude.Contains(propertyType)
+                    //|| propertyType == "array" && GetJsonElementType(property.Value[0]) != "object") 
+                    && !result.Contains($"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null"))
+                    result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null,\n");
+                else if (propertyType == "array" && property.Value.GetArrayLength() > 0 && GetJsonElementType(property.Value[0]) != "object")
+                    result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {GetJsonElementType(property.Value[0])} null,\n");
+                else if (toExclude.Contains(propertyType))
                 {
-                    string propertyName = property.Name;
-                    string propertyType = GetJsonElementType(property.Value);
-
-                    //JsonElement child;
-                    //if (propertyType == "array") child = property.Value[0];
-
-                    if (!toExclude.Contains(propertyType) 
-                        //|| propertyType == "array" && GetJsonElementType(property.Value[0]) != "object") 
-                        && !result.Contains($"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null"))
-                        result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {propertyType} null,\n");
-                    else if (propertyType == "array" && property.Value.GetArrayLength() > 0 && GetJsonElementType(property.Value[0]) != "object")
-                        result = result.Insert(result.Length, $"{char.ToUpper(propertyName[0]) + propertyName.Substring(1)} {GetJsonElementType(property.Value[0])} null,\n");
-                    else if (propertyType == "array")
+                    Console.WriteLine($"Выполнить парсинг вложенного узла {propertyName}? Введите Y для подтверждения, N - для отказа");
+                    string reply = Console.ReadLine();
+                    if (reply.ToUpper() == "Y")
                     {
-                        Console.WriteLine($"Выполнить парсинг вложенного узла {propertyName}? Введите Y для подтверждения, N - для отказа");
-                        string reply = Console.ReadLine();
-                        if (reply.ToUpper() == "Y")
-                            CreateQueryBody(property.Value, result, out result);
+                        CreateQueryBody(property.Value, result, out result);
                     }
                 }
             }
